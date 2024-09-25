@@ -1,22 +1,34 @@
 import React, { useEffect, useRef } from 'react';
 import Clappr from 'clappr';
-import LevelSelector from 'level-selector';
-import ChromecastPlugin from 'clappr-chromecast-plugin';
+import { ChromecastPlugin } from 'clappr-chromecast-plugin';
+import LevelSelector from 'clappr-level-selector-plugin';
 
 const LivePlayer = () => {
     const playerRef = useRef(null);
     const playerInstanceRef = useRef(null);
 
     useEffect(() => {
-        const playerElement = playerRef.current;
+        const scripts = [
+            'https://cdn.jsdelivr.net/npm/cdnbye@latest/dist/hlsjs-p2p-engine.min.js',
+            'https://cdn.jsdelivr.net/npm/cdnbye@latest/dist/clappr-plugin.min.js',
+            'https://cdn.jsdelivr.net/npm/clappr-responsive-container-plugin@1.0.0/dist/clappr-responsive-container-plugin.min.js',
+        ];
 
-        const corsProxy = 'http://localhost:8080/';
-        const originalSource = 'https://live.mywaitserver.com/Stream1/tracks-v1/mono.m3u8';
-        const proxiedSource = `${corsProxy}${originalSource}`;
+        scripts.forEach(src => {
+            const script = document.createElement('script');
+            script.src = src;
+            script.async = true;
+            document.body.appendChild(script);
+        });
 
-        const player = new Clappr.Player({
-            source: proxiedSource,
-            parentId: '#player',
+        playerInstanceRef.current = new Clappr.Player({
+            source: atob('https://live.mywaitserver.com/hls/test.m3u8'),
+            parentId: playerRef.current,
+            height: '100%',
+            width: '100%',
+            autoPlay: true,
+            disableErrorScreen: true,
+            mute: true,
             chromecast: {
                 appId: '9DFB77C0',
                 media: {
@@ -25,15 +37,11 @@ const LivePlayer = () => {
                     subtitle: 'player'
                 }
             },
-            height: '100%',
-            width: '100%',
-            autoPlay: true,
-            disableErrorScreen: true,
-            mute: true,
             events: {
                 onError: (e) => {
-                    console.error('Clappr player error:', e);
-                    setTimeout(() => { player.configure(player.options); }, 10000);
+                    setTimeout(() => {
+                        playerInstanceRef.current.configure(playerInstanceRef.current.options);
+                    }, 10000);
                 }
             },
             plugins: [LevelSelector, ChromecastPlugin],
@@ -54,19 +62,16 @@ const LivePlayer = () => {
             },
             mimeType: "application/x-mpegURL"
         });
-
-        playerInstanceRef.current = player;
-
         const resizePlayer = () => {
             const aspectRatio = 9/16;
-            const newWidth = playerElement.parentElement.offsetWidth;
+            const newWidth = playerRef.current.offsetWidth;
             const newHeight = 2 * Math.round(newWidth * aspectRatio / 2);
-            player.resize({width: newWidth, height: newHeight});
+            playerInstanceRef.current.resize({ width: newWidth, height: newHeight });
         };
-
         resizePlayer();
         window.addEventListener('resize', resizePlayer);
 
+        // Cleanup
         return () => {
             window.removeEventListener('resize', resizePlayer);
             if (playerInstanceRef.current) {
@@ -77,7 +82,7 @@ const LivePlayer = () => {
 
     return (
         <div className="embed-responsive embed-responsive-16by9">
-            <div id="player" ref={playerRef} className="embed-responsive-item"></div>
+            <div ref={playerRef} className="embed-responsive-item"></div>
         </div>
     );
 };
