@@ -10,7 +10,7 @@ const LivePlayer = () => {
     useEffect(() => {
         const playerElement = playerRef.current;
 
-        const corsProxy = 'https://cors-anywhere.herokuapp.com/';
+        const corsProxy = 'http://localhost:8080/';
         const originalSource = 'https://live.mywaitserver.com/Stream1/tracks-v1/mono.m3u8';
         const proxiedSource = `${corsProxy}${originalSource}`;
 
